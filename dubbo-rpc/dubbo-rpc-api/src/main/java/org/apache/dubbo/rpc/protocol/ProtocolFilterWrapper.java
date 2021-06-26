@@ -52,6 +52,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        // 根据url获取filter，根据url中的parameters取key为key的value所对应的filter，但是还会匹配group
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
 
         if (!filters.isEmpty()) {
@@ -79,6 +80,7 @@ public class ProtocolFilterWrapper implements Protocol {
                     public Result invoke(Invocation invocation) throws RpcException {
                         Result asyncResult;
                         try {
+                            // 得到一个异步结果
                             asyncResult = filter.invoke(next, invocation);
                         } catch (Exception e) {
                             // onError callback
@@ -124,7 +126,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
-        if (REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+        if (REGISTRY_PROTOCOL.equals(url.getProtocol())) {  // dubbo://
             return protocol.refer(type, url);
         }
         return buildInvokerChain(protocol.refer(type, url), REFERENCE_FILTER_KEY, CommonConstants.CONSUMER);
@@ -154,8 +156,10 @@ public class ProtocolFilterWrapper implements Protocol {
 
         @Override
         public Result invoke(Invocation invocation) throws RpcException {
+            // 执行过滤器链
             Result asyncResult = filterInvoker.invoke(invocation);
 
+            // 过滤器都执行完了之后，回调每个ListenableFilter过滤器的onResponse或onError方法
             asyncResult = asyncResult.whenCompleteWithContext((r, t) -> {
                 for (int i = filters.size() - 1; i >= 0; i--) {
                     Filter filter = filters.get(i);

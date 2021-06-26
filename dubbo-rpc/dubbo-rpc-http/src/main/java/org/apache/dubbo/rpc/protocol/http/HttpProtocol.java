@@ -87,6 +87,7 @@ public class HttpProtocol extends AbstractProxyProtocol {
             } else if ("POST".equalsIgnoreCase(request.getMethod())) {
 
                 RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
+                // 处理请求
                 try {
                     skeleton.handle(request.getInputStream(), response.getOutputStream());
                 } catch (Throwable e) {
@@ -108,6 +109,8 @@ public class HttpProtocol extends AbstractProxyProtocol {
             serverMap.put(addr, server);
         }
         final String path = url.getAbsolutePath();
+
+        // JsonRpcServer会去处理请求
         JsonRpcServer skeleton = new JsonRpcServer(impl, type);
         skeletonMap.put(path, skeleton);
         return () -> skeletonMap.remove(path);
@@ -116,6 +119,8 @@ public class HttpProtocol extends AbstractProxyProtocol {
     @SuppressWarnings("unchecked")
     @Override
     protected <T> T doRefer(final Class<T> serviceType, URL url) throws RpcException {
+        // json-rpc了解一下，jsonrpc4j
+        // https://segmentfault.com/a/1190000018807729?utm_source=tag-newest
         JsonProxyFactoryBean jsonProxyFactoryBean = new JsonProxyFactoryBean();
         jsonProxyFactoryBean.setServiceUrl(url.setProtocol("http").toIdentityString());
         jsonProxyFactoryBean.setServiceInterface(serviceType);

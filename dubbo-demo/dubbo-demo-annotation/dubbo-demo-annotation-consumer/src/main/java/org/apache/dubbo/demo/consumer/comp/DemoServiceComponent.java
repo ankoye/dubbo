@@ -21,16 +21,17 @@ package org.apache.dubbo.demo.consumer.comp;
 
 import org.apache.dubbo.config.annotation.Reference;
 import org.apache.dubbo.demo.DemoService;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
-    @Reference
+
+    @Reference(version = "1.0.1", group = "test", mock = "fail: return 123")
     private DemoService demoService;
 
     @Override
     public String sayHello(String name) {
-        return demoService.sayHello(name);
+        return demoService.sayHello(name);  // Invoker
     }
 }

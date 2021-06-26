@@ -81,10 +81,21 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         try {
+            // 执行服务，得到一个接口，可能是一个CompletableFuture(表示异步调用)，可能是一个正常的服务执行结果（同步调用）
+            // 如果是同步调用会阻塞，如果是异步调用不会阻塞
             Object value = doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments());
+
+            // 将同步调用的服务执行结果封装为CompletableFuture类型
             CompletableFuture<Object> future = wrapWithFuture(value, invocation);
+
+            // 异步RPC结果
             AsyncRpcResult asyncRpcResult = new AsyncRpcResult(invocation);
+
+            //设置一个回调，如果是异步调用，那么服务执行完成后将执行这里的回调
             future.whenComplete((obj, t) -> {
+                // 当服务执行完后，将服务之后将结果或异常设置到AsyncRpcResult中
+                // 如果是异步服务，那么服务之后的异常会在此处封装到AppResponse中然后返回
+                // 如果是同步服务出异常了，则会在下面将异常封装到AsyncRpcResult中
                 AppResponse result = new AppResponse();
                 if (t != null) {
                     if (t instanceof CompletionException) {
@@ -95,15 +106,21 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
                 } else {
                     result.setValue(obj);
                 }
+                // 将服务执行完之后的结果设置到异步RPC结果对象中
                 asyncRpcResult.complete(result);
             });
+
+            // 返回异步RPC结果
             return asyncRpcResult;
         } catch (InvocationTargetException e) {
+            // 假设抛的NullPointException，那么会把这个异常包装为一个Result对象
             if (RpcContext.getContext().isAsyncStarted() && !RpcContext.getContext().stopAsync()) {
                 logger.error("Provider async started, but got an exception from the original method, cannot write the exception back to consumer because an async result may have returned the new thread.", e);
             }
+            // 同步服务执行时如何出异常了，会在此处将异常信息封装为一个AsyncRpcResult然后返回
             return AsyncRpcResult.newDefaultAsyncResult(null, e.getTargetException(), invocation);
         } catch (Throwable e) {
+            // 执行服务后的所有异常都会包装为RpcException进行抛出
             throw new RpcException("Failed to invoke remote proxy method " + invocation.getMethodName() + " to " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }

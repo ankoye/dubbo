@@ -18,26 +18,31 @@
  */
 package org.apache.dubbo.demo.consumer;
 
+import org.apache.dubbo.config.ConsumerConfig;
+import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.demo.consumer.comp.DemoServiceComponent;
+import org.apache.dubbo.rpc.service.EchoService;
+import org.springframework.context.annotation.*;
 
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
+import java.io.IOException;
 
 public class Application {
     /**
      * In order to make sure multicast registry works, need to specify '-Djava.net.preferIPv4Stack=true' before
      * launch the application
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
         context.start();
         DemoService service = context.getBean("demoServiceComponent", DemoServiceComponent.class);
+        System.out.println("开始调用");
         String hello = service.sayHello("world");
         System.out.println("result :" + hello);
+
+
+        System.in.read();
     }
 
     @Configuration
@@ -45,6 +50,11 @@ public class Application {
     @PropertySource("classpath:/spring/dubbo-consumer.properties")
     @ComponentScan(value = {"org.apache.dubbo.demo.consumer.comp"})
     static class ConsumerConfiguration {
+
+        @Bean
+        public ConsumerConfig consumerConfig() {
+            return new ConsumerConfig();
+        }
 
     }
 }

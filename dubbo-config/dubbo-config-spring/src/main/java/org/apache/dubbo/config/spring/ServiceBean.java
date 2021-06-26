@@ -87,7 +87,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+
+        // 如果某一个Service是通过Spring暴露的，
+        // 那么当需要获取该服务时就要从Spring容器中进行获取，
+        // 也就是从applicationContext中获取，所以需要把applicationContext添加到SpringExtensionFactory中去
         SpringExtensionFactory.addApplicationContext(applicationContext);
+        // 一定要有这一步，不然ServiceBean将接收不到ContextRefreshedEvent事件
         supportedApplicationListener = addApplicationListener(applicationContext, this);
     }
 
@@ -107,10 +112,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        // 当前服务没有被导出并且没有卸载，才导出服务
         if (!isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
             }
+            // 服务导出（服务注册）
             export();
         }
     }
@@ -118,12 +125,20 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @Override
     @SuppressWarnings({"unchecked", "deprecation"})
     public void afterPropertiesSet() throws Exception {
+
+        // 如果@Service中没有配置provider
         if (getProvider() == null) {
+            // 就从Spring容器中找ProviderConfig类型的Bean
             Map<String, ProviderConfig> providerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, false, false);
             if (providerConfigMap != null && providerConfigMap.size() > 0) {
+                // 从Spring容器中找ProtocolConfig类型的Bean
                 Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
+
+                // 如果存在ProtocolConfig存在，并且存在多个ProviderConfig
                 if (CollectionUtils.isEmptyMap(protocolConfigMap)
                         && providerConfigMap.size() > 1) { // backward compatibility
+
+                    // 如果找到多个，取第一个default等于true的ProviderConfig
                     List<ProviderConfig> providerConfigs = new ArrayList<ProviderConfig>();
                     for (ProviderConfig config : providerConfigMap.values()) {
                         if (config.isDefault() != null && config.isDefault()) {
@@ -184,6 +199,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        // registryIds代码能看到，但是没找到在哪里能配置
         if (StringUtils.isEmpty(getRegistryIds())) {
             if (getApplication() != null && StringUtils.isNotEmpty(getApplication().getRegistryIds())) {
                 setRegistryIds(getApplication().getRegistryIds());
@@ -273,6 +289,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        // protocolIds也没看到在哪里配置
         if (StringUtils.isEmpty(getProtocolIds())) {
             if (getProvider() != null && StringUtils.isNotEmpty(getProvider().getProtocolIds())) {
                 setProtocolIds(getProvider().getProtocolIds());
@@ -335,6 +352,8 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     public void export() {
         super.export();
         // Publish ServiceBeanExportedEvent
+        // Spring启动完发布ContextRefreshedEvent事件--->服务导出--->发布ServiceBeanExportedEvent
+        // 程序员可以通过Spring中的ApplicationListener来监听服务导出是否完成
         publishExportEvent();
     }
 

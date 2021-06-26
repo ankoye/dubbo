@@ -99,16 +99,20 @@ public class TagRouter extends AbstractRouter implements ConfigurationListener {
         }
 
         List<Invoker<T>> result = invokers;
+        // 获取调用对象invocation中所设置的tag
         String tag = StringUtils.isEmpty(invocation.getAttachment(Constants.TAG_KEY)) ? url.getParameter(Constants.TAG_KEY) :
                 invocation.getAttachment(Constants.TAG_KEY);
 
         // if we are requesting for a Provider with a specific tag
         if (StringUtils.isNotEmpty(tag)) {
+            // 获取对应tag所设置的服务提供者address
             List<String> addresses = tagRouterRuleCopy.getTagnameToAddresses().get(tag);
             // filter by dynamic tag group first
             if (CollectionUtils.isNotEmpty(addresses)) {
+                // 根据tag所对应的address对所有服务提供者invokers进行过滤
                 result = filterInvoker(invokers, invoker -> addressMatches(invoker.getUrl(), addresses));
                 // if result is not null OR it's null but force=true, return result directly
+                // 如果过滤之后还有结果，那就用过滤之后的结果，如果没有结果，但是此标签路由是要强制使用的，那么则会把空结果返回(没有此tag所对应的服务提供者可用)
                 if (CollectionUtils.isNotEmpty(result) || tagRouterRuleCopy.isForce()) {
                     return result;
                 }
@@ -236,10 +240,15 @@ public class TagRouter extends AbstractRouter implements ConfigurationListener {
             return;
         }
 
+
+        // invoker表示一个服务执行者
         Invoker<T> invoker = invokers.get(0);
         URL url = invoker.getUrl();
+
+        // 要执行的服务在哪个应用上，服务提供者应用
         String providerApplication = url.getParameter(CommonConstants.REMOTE_APPLICATION_KEY);
 
+        // 标签路由只能设置在某个应用上
         if (StringUtils.isEmpty(providerApplication)) {
             logger.error("TagRouter must getConfig from or subscribe to a specific application, but the application " +
                     "in this TagRouter is not specified.");
@@ -247,13 +256,19 @@ public class TagRouter extends AbstractRouter implements ConfigurationListener {
         }
 
         synchronized (this) {
+            // 服务提供者所属的应用
+            // application是TagRouter中的一个属性，表示当前TagRouter是在哪个应用上
             if (!providerApplication.equals(application)) {
                 if (!StringUtils.isEmpty(application)) {
                     configuration.removeListener(application + RULE_SUFFIX, this);
                 }
+
+                // dubbo-demo-provider-application.tag-router
                 String key = providerApplication + RULE_SUFFIX;
                 configuration.addListener(key, this);
+
                 application = providerApplication;
+
                 String rawRule = configuration.getRule(key, DynamicConfiguration.DEFAULT_GROUP);
                 if (StringUtils.isNotEmpty(rawRule)) {
                     this.process(new ConfigChangeEvent(key, rawRule));

@@ -17,15 +17,19 @@
 package org.apache.dubbo.demo.consumer;
 
 import org.apache.dubbo.demo.DemoService;
-
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.concurrent.CompletableFuture;
 
 public class Application {
     public static void main(String[] args) {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("spring/dubbo-consumer.xml");
         context.start();
+
+
+        // 接口的代理对象
         DemoService demoService = context.getBean("demoService", DemoService.class);
-        String hello = demoService.sayHello("world");
+        String hello = demoService.sayHello("world");  // dubbo代理逻辑---》执行服务
         System.out.println("result: " + hello);
     }
 }

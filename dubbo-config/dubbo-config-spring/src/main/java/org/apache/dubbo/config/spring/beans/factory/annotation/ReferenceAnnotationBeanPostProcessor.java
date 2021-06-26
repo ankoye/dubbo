@@ -120,6 +120,8 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         return Collections.unmodifiableMap(injectedMethodReferenceBeanCache);
     }
 
+    // 该方法得到的对象会赋值给@ReferenceBean注解的属性
+    //
     @Override
     protected Object doGetInjectedBean(AnnotationAttributes attributes, Object bean, String beanName, Class<?> injectedType,
                                        InjectionMetadata.InjectedElement injectedElement) throws Exception {
@@ -127,19 +129,26 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         /**
          * The name of bean that annotated Dubbo's {@link Service @Service} in local Spring {@link ApplicationContext}
          */
+        // 按ServiceBean的beanName生成规则来生成referencedBeanName， 规则为ServiceBean:interfaceClassName:version:group
         String referencedBeanName = buildReferencedBeanName(attributes, injectedType);
 
         /**
          * The name of bean that is declared by {@link Reference @Reference} annotation injection
          */
+        // @Reference(methods=[Lorg.apache.dubbo.config.annotation.Method;@39b43d60) org.apache.dubbo.demo.DemoService
+        // 根据@Reference注解的信息生成referenceBeanName
         String referenceBeanName = getReferenceBeanName(attributes, injectedType);
 
+        // 生成一个ReferenceBean对象
         ReferenceBean referenceBean = buildReferenceBeanIfAbsent(referenceBeanName, attributes, injectedType);
 
+        // 把referenceBean添加到Spring容器中去
         registerReferenceBean(referencedBeanName, referenceBean, attributes, injectedType);
 
         cacheInjectedReferenceBean(referenceBean, injectedElement);
 
+        // 创建一个代理对象，Service中的属性被注入的就是这个代理对象
+        // 内部会调用referenceBean.get();
         return getOrCreateProxy(referencedBeanName, referenceBeanName, referenceBean, injectedType);
     }
 
@@ -158,18 +167,21 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
         ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 
+        // 就是referenceBeanName
         String beanName = getReferenceBeanName(attributes, interfaceClass);
 
+        // 当前Spring容器中是否存在referencedBeanName
         if (existsServiceBean(referencedBeanName)) { // If @Service bean is local one
             /**
              * Get  the @Service's BeanDefinition from {@link BeanFactory}
              * Refer to {@link ServiceAnnotationBeanPostProcessor#buildServiceBeanDefinition}
              */
             AbstractBeanDefinition beanDefinition = (AbstractBeanDefinition) beanFactory.getBeanDefinition(referencedBeanName);
-            RuntimeBeanReference runtimeBeanReference = (RuntimeBeanReference) beanDefinition.getPropertyValues().get("ref");
+            RuntimeBeanReference runtimeBeanReference = (RuntimeBeanReference) beanDefinition.getPropertyValues().get("ref"); // ServiceBean --- ref
             // The name of bean annotated @Service
-            String serviceBeanName = runtimeBeanReference.getBeanName();
+            String serviceBeanName = runtimeBeanReference.getBeanName(); // DemoServiceImpl对应的beanName
             // register Alias rather than a new bean name, in order to reduce duplicated beans
+            // DemoServiceImpl多了一个别名，比如 demoServiceImpl和
             beanFactory.registerAlias(serviceBeanName, beanName);
         } else { // Remote @Service Bean
             if (!beanFactory.containsBean(beanName)) {
@@ -190,6 +202,8 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
     private String getReferenceBeanName(AnnotationAttributes attributes, Class<?> interfaceClass) {
         // id attribute appears since 2.7.3
         String beanName = getAttribute(attributes, "id");
+
+        // beanName为null时会进入if判断
         if (!hasText(beanName)) {
             beanName = generateReferenceBeanName(attributes, interfaceClass);
         }
@@ -243,6 +257,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
             return newProxyInstance(getClassLoader(), new Class[]{serviceInterfaceType},
                     wrapInvocationHandler(referenceBeanName, referenceBean));
         } else {                                    // ReferenceBean should be initialized and get immediately
+            // 重点
             return referenceBean.get();
         }
     }
@@ -317,10 +332,13 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         ReferenceBean<?> referenceBean = referenceBeanCache.get(referenceBeanName);
 
         if (referenceBean == null) {
+
+            // 生成了一个ReferenceBean对象，attributes是@Reference注解的参数值
             ReferenceBeanBuilder beanBuilder = ReferenceBeanBuilder
                     .create(attributes, applicationContext)
                     .interfaceClass(referencedType);
             referenceBean = beanBuilder.build();
+
             referenceBeanCache.put(referenceBeanName, referenceBean);
         } else if (!referencedType.isAssignableFrom(referenceBean.getInterfaceClass())) {
             throw new IllegalArgumentException("reference bean name " + referenceBeanName + " has been duplicated, but interfaceClass " +

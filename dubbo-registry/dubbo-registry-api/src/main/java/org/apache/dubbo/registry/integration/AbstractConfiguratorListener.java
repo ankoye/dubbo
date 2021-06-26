@@ -38,15 +38,25 @@ public abstract class AbstractConfiguratorListener implements ConfigurationListe
     protected List<Configurator> configurators = Collections.emptyList();
 
 
+    // 在构造ProviderConfigurationListener和ServiceConfigurationListener都会调用到这个方法
+    // 完成Listener自身订阅到对应的应用和服务
+    // 订阅关系绑定完了之后，主动从动态配置中心获取一下对应的配置数据生成configurators，后面需要重写providerUrl
     protected final void initWith(String key) {
         DynamicConfiguration dynamicConfiguration = DynamicConfiguration.getDynamicConfiguration();
+        // 添加Listener,进行了订阅
         dynamicConfiguration.addListener(key, this);
+
+        // 从配置中心ConfigCenter获取属于当前应用的动态配置数据，从zk中拿到原始数据(主动从配置中心获取数据)
         String rawConfig = dynamicConfiguration.getRule(key, DynamicConfiguration.DEFAULT_GROUP);
+        // 如果存在应用配置信息则根据配置信息生成Configurator
         if (!StringUtils.isEmpty(rawConfig)) {
             genConfiguratorsFromRawRule(rawConfig);
         }
+
+
     }
 
+    // 处理配置信息变化事件
     @Override
     public void process(ConfigChangeEvent event) {
         if (logger.isInfoEnabled()) {
@@ -69,6 +79,7 @@ public abstract class AbstractConfiguratorListener implements ConfigurationListe
         boolean parseSuccess = true;
         try {
             // parseConfigurators will recognize app/service config automatically.
+            // 先把应用或服务配置转成url，再根据url生成对应的Configurator
             configurators = Configurator.toConfigurators(ConfigParser.parseConfigurators(rawConfig))
                     .orElse(configurators);
         } catch (Exception e) {

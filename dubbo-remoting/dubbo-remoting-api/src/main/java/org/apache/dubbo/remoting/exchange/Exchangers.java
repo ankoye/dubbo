@@ -66,7 +66,9 @@ public class Exchangers {
         if (handler == null) {
             throw new IllegalArgumentException("handler == null");
         }
+        // codec表示协议编码方式
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        // 通过url得到HeaderExchanger， 利用HeaderExchanger进行bind，将得到一个HeaderExchangeServer
         return getExchanger(url).bind(url, handler);
     }
 
@@ -106,6 +108,8 @@ public class Exchangers {
             throw new IllegalArgumentException("handler == null");
         }
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+
+        // 得到一个HeaderExchanger去connect
         return getExchanger(url).connect(url, handler);
     }
 

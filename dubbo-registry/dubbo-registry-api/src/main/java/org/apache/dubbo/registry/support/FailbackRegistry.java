@@ -107,6 +107,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         oldOne = failedRegistered.putIfAbsent(url, newTask);
         if (oldOne == null) {
             // never has a retry task. then start a new task for retry.
+            // 默认情况下5s后会进行重试注册
             retryTimer.newTimeout(newTask, retryPeriod, TimeUnit.MILLISECONDS);
         }
     }
@@ -144,6 +145,8 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         if (oldOne != null) {
             return;
         }
+
+        // 开启一个Task进行重试
         FailedSubscribedTask newTask = new FailedSubscribedTask(url, this, listener);
         oldOne = failedSubscribed.putIfAbsent(h, newTask);
         if (oldOne == null) {
@@ -286,6 +289,11 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     *
+     * @param url 表示要订阅的url，比如provider://...
+     * @param listener
+     */
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         super.subscribe(url, listener);
@@ -316,6 +324,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            // 添加listener，向zk添加监听器时如果报错了，那么会把这个listener添加到failedSubscribed中，并会定时重试（重新注册listener）
             addFailedSubscribed(url, listener);
         }
     }
@@ -348,6 +357,12 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 接收到通知，处理通知的方法
+     * @param url      被监听的url
+     * @param listener 监听器
+     * @param urls      要么有一个empty://，要么有一个或多个override://协议
+     */
     @Override
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
         if (url == null) {
@@ -359,6 +374,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         try {
             doNotify(url, listener, urls);
         } catch (Exception t) {
+            // 处理通知失败
             // Record a failed registration request to a failed list, retry regularly
             addFailedNotified(url, listener, urls);
             logger.error("Failed to notify for subscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);

@@ -45,6 +45,10 @@ import java.lang.annotation.Target;
 @DubboComponentScan
 public @interface EnableDubbo {
 
+    // @EnableDubboConfig注解用来将properties文件中的配置项转化为对应的Bean
+    // @DubboComponentScan注解用来扫描服务提供者和引用者(@Service)
+
+
     /**
      * Base packages to scan for annotated @Service classes.
      * <p>
