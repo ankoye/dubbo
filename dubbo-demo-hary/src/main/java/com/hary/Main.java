@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(Main.class);
         RedCar redCar = applicationContext.getBean("redCar", RedCar.class);
-        redCar.sayHell();
+        redCar.sayHello();
         System.out.println(redCar);
 
     }

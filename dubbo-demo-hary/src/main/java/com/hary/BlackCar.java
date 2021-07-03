@@ -10,7 +10,7 @@ public class BlackCar implements Car {
     }
 
     @Override
-    public String sayHell() {
+    public String sayHello() {
         return null;
     }
 }

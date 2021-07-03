@@ -10,7 +10,5 @@ public interface Car {
     @Adaptive
     String getCarName(URL url);
 
-    String sayHell();
-
-
+    String sayHello();
 }

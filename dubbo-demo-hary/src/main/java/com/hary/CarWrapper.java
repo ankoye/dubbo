@@ -17,7 +17,7 @@ public class CarWrapper implements Car {
     }
 
     @Override
-    public String sayHell() {
+    public String sayHello() {
         return null;
     }
 }

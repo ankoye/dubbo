@@ -109,6 +109,9 @@ public class ExtensionLoader<T> {
         return type.isAnnotationPresent(SPI.class);
     }
 
+    /**
+     * 获取扩展点加载器
+     */
     @SuppressWarnings("unchecked")
     public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         if (type == null) {
@@ -357,16 +360,17 @@ public class ExtensionLoader<T> {
             return getDefaultExtension();
         }
 
+        // 一个name对应一把锁
         final Holder<Object> holder = getOrCreateHolder(name);
         Object instance = holder.get();
 
         // 如果有两个线程同时来获取同一个name的扩展点对象，那只会有一个线程会进行创建
         if (instance == null) {
-            synchronized (holder) { // 一个name对应一把锁
+            synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
                     // 创建扩展点实例对象
-                    instance = createExtension(name);   // 创建扩展点对象
+                    instance = createExtension(name);
                     holder.set(instance);
                 }
             }
@@ -685,7 +689,7 @@ public class ExtensionLoader<T> {
     private Map<String, Class<?>> loadExtensionClasses() {
         // cache接口默认的扩展类
         cacheDefaultExtensionName();
-
+        // 从以下目录获取：META-INF/dubbo/internal、META-INF/dubbo/、META-INF/services/
         Map<String, Class<?>> extensionClasses = new HashMap<>();
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName());
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));

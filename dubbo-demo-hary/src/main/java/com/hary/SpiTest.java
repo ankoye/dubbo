@@ -3,36 +3,34 @@ package com.hary;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 
+import java.util.ServiceLoader;
+
 public class SpiTest {
     public static void main(String[] args) {
 
-//        ServiceLoader<Car> cars = ServiceLoader.load(Car.class);
-//        for (Car car : cars) {
-//            System.out.println(car.getCarName(null));
-//        }
+        // Java SPI
+        ServiceLoader<Car> cars = ServiceLoader.load(Car.class);
+        for (Car car : cars) {
+            System.out.println(car.getCarName(null));
+        }
 
 
 //        ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
 //        Protocol protocol = extensionLoader.getExtension("http");
 //        System.out.println(protocol);
 
+
 //        ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
-//
 //        Car car = extensionLoader.getExtension("true"); // 自动注入，AOP
-//
 //        System.out.println(car.getCarName());
 
         ExtensionLoader<Person> extensionLoader = ExtensionLoader.getExtensionLoader(Person.class);
         Person person = extensionLoader.getExtension("black");  // BlackPerson
-
+        // 使用url依赖注入
         URL url = new URL("x", "localhost", 8080);
         url = url.addParameter("car", "black");
-
         System.out.println(person.getCar().getCarName(url));  // 代理逻辑
-
-
-//        System.out.println(person.getCar().getCarName(url));
-
+        System.out.println(person.getCar().sayHello());
 
 //        ExtensionLoader<Filter> extensionLoader = ExtensionLoader.getExtensionLoader(Filter.class);
 //        URL url = new URL("http://", "localhost", 8080);
@@ -42,12 +40,5 @@ public class SpiTest {
 //            System.out.println(activateExtension);
 //        }
 
-
-//        ConcurrentHashSet set = new ConcurrentHashSet();
-//        set.add("test1");
-//        set.add("test2");
-//        set.add("test3");
-//
-//        System.out.println(set);
     }
 }
