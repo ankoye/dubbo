@@ -291,15 +291,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public void checkAndUpdateSubConfigs() {
-        // Use default configs defined explicitly on global configs
         // ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
         // 补全ServiceConfig中的属性
+        // Use default configs defined explicitly on global configs
         completeCompoundConfigs();
 
-        // Config Center should always being started first.
         // 从配置中心获取配置，包括应用配置和全局配置
         // 把获取到的配置放入到Environment中的externalConfigurationMap和appExternalConfigurationMap中
         // 并刷新所有的XxConfig的属性（除开ServiceConfig），刷新的意思就是将配置中心的配置覆盖调用XxConfig中的属性
+        // Config Center should always being started first.
         startConfigCenter();
 
         checkDefault();
@@ -393,6 +393,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public synchronized void export() {
+        // 读取服务使用的配置
         checkAndUpdateSubConfigs();
 
         // 检查服务是否需要导出

@@ -14,24 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.demo.consumer;
+package org.apache.dubbo.demo.provider;
 
 import org.apache.dubbo.demo.DemoService;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.apache.dubbo.rpc.RpcContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
+public class DemoServiceImpl2 implements DemoService {   // 服务
+    private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl2.class);
 
-public class Application {
-    public static void main(String[] args) throws IOException {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("spring/dubbo-consumer.xml");
-        context.start();
-
-        // 接口的代理对象
-        DemoService demoService = context.getBean("demoService", DemoService.class);
-        String hello = demoService.sayHello("world");  // dubbo代理逻辑---》执行服务
-        System.out.println("result: " + hello);
-
-        System.in.read();
+    @Override
+    public String sayHello(String name) {
+        logger.info("Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
+        return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
     }
+
 }

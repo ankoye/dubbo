@@ -162,6 +162,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
 
                 // 扫描到BeanDefinition开始处理它
                 for (BeanDefinitionHolder beanDefinitionHolder : beanDefinitionHolders) {
+                    // 注册ServiceBean
                     registerServiceBean(beanDefinitionHolder, registry, scanner);
                 }
 

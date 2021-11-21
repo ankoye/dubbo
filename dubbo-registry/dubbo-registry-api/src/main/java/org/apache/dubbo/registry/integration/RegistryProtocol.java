@@ -229,7 +229,7 @@ public class RegistryProtocol implements Protocol {
         // 新版本监听的zk路径是：
         // 服务： /dubbo/config/dubbo/org.apache.dubbo.demo.DemoService.configurators节点的内容
         // 应用： /dubbo/config/dubbo/dubbo-demo-provider-application.configurators节点的内容
-        // 注意，要喝配置中心的路径区分开来，配置中心的路径是：
+        // 注意，要和配置中心的路径区分开来，配置中心的路径是：
         // 应用：/dubbo/config/dubbo/org.apache.dubbo.demo.DemoService/dubbo.properties节点的内容
         // 全局：/dubbo/config/dubbo/dubbo.properties节点的内容
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);

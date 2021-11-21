@@ -169,6 +169,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         setConsumerUrl(url);
         CONSUMER_CONFIGURATION_LISTENER.addNotifyListener(this); // 监听consumer应用
         serviceConfigurationListener = new ReferenceConfigurationListener(this, url); // 监听所引入的服务的动态配置
+        // 老版本
         registry.subscribe(url, this);
     }
 

@@ -71,6 +71,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
             //NOTE: if `invokers` changed, then `invoked` also lose accuracy.
             if (i > 0) {
                 checkWhetherDestroyed();
+                // 服务路由
                 copyInvokers = list(invocation);
                 // check again
                 checkInvokers(copyInvokers, invocation);
